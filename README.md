@@ -1,74 +1,45 @@
-# Bluesky Social App
+# Pulse: Social Media for Humans
+Pulse is a social media platform focused on humans talking to humans (though bots are also welcome). Pulse uses your phone's existing biometric authentication (through Apple on iPhone or Google on Android) to verify that every post is made by a human.
 
-Welcome friends! This is the codebase for the Bluesky Social app.
+The Pulse app is based on [Bluesky](https://github.com/bluesky-social/social-app) and federates with the [AT Protocol](https://github.com/bluesky-social/atproto).
 
-Get the app itself:
+## Why?
+Bots on social media are a good thing. They can automatically create posts on breaking news or the latest memes from other sources, and do other cool things. The problem is that social media is flooded with bots PRETENDING TO BE PEOPLE in order to influence, annoy, divide and enrage us.  We're quickly moving toward a [Dead Internet](https://en.wikipedia.org/wiki/Dead_Internet_theory).  
 
-- **Web: [bsky.app](https://bsky.app)**
-- **iOS: [App Store](https://apps.apple.com/us/app/bluesky-social/id6444370199)**
-- **Android: [Play Store](https://play.google.com/store/apps/details?id=xyz.blueskyweb.app)**
+We need a way to know when we're talking to actual humans and when we are talking to bots.  Biometric authentication performs authentication using our bodies, such as a face or fingerprint.  Providing this authentication can also be used to prove that you are human.
 
-## Development Resources
+Luckily, smartphones already provide biometric authentication that is strong enough to be trusted by banks.  By leveraging existing authentication methods that we already use every day with our phones, a social media network could provide a reasonable guarantee that a poster is human.  At the very least this makes running botnets of fake humans more difficult.
 
-This is a [React Native](https://reactnative.dev/) application, written in the TypeScript programming language. It builds on the `atproto` TypeScript packages (like [`@atproto/api`](https://www.npmjs.com/package/@atproto/api)), code for which is also open source, but in [a different git repository](https://github.com/bluesky-social/atproto).
+## Am I sharing my biometric information with you?
+No. You are sharing your biometric information with Apple or Google. If you are already using biometric authentication to unlock your phone or use any other app on your phone, you're already set up! You are only giving Pulse permission to use that existing authentication.
 
-There is a small amount of Go language source code (in `./bskyweb/`), for a web service that returns the React Native Web application.
+## Am I sharing my real identity with you?
+No. The Pulse app only sees THAT you are a human, not WHICH human you are when you authenticate to post. You may have shared that information with Apple or Google, but the app isn't requesting it and they aren't sharing it.
 
-The [Build Instructions](./docs/build.md) are a good place to get started with the app itself.
+## Can I post as a human from a device other than an iPhone or Android smartphone?
+No. Web browsers can't provide the attestation necessary to ensure that local biometric authentication is actually happening.  Without Apple App Attestation or Google SafetyNet, anyone could make a Pulse client and skip performing local biometric auth to post as a human.  The only way the server can verify that this didn't happen is by verifying the client app the request is coming from with Apple or Google.  The web browser simply can't do this.
 
-The Authenticated Transfer Protocol ("AT Protocol" or "atproto") is a decentralized social media protocol. You don't *need* to understand AT Protocol to work with this application, but it can help. Learn more at:
+## Compared to Bluesky, what additional information am I sharing with Pulse?
+Pulse only needs to know whether to use Apple or Google for post verification.  No other details are needed or requested.
 
-- [Overview and Guides](https://atproto.com/guides/overview)
-- [Github Discussions](https://github.com/bluesky-social/atproto/discussions) 👈 Great place to ask questions
-- [Protocol Specifications](https://atproto.com/specs/atp)
-- [Blogpost on self-authenticating data structures](https://bsky.social/about/blog/3-6-2022-a-self-authenticating-social-protocol)
+## Can I post as a bot on my human account if I want to use a web browser and not verify?
+Maybe that's something that could be supported, but not for now.
 
-The Bluesky Social application encompasses a set of schemas and APIs built in the overall AT Protocol framework. The namespace for these "Lexicons" is `app.bsky.*`.
+## How do you deal with bot farms that will have a human sitting in front of 50 phones making posts?
+You can't really, but this is still significantly more difficult than running bot farms on Reddit or Twitter or Bluesky or any of the others.
 
-## Contributions
+## Implementation Outline
+### Pulse PDS
+* Additional db schema fields
+	* Profile
+		* isHuman - boolean
+	* Post
+		* isBioAuthenticated - boolean (allow human profile to post without bioauth?  Would allow posting from web browser since auth is strictly iOS/Android for now)
+* Additional pre-post logic
+	* Check Apple App Attestation/Google SafetyNet token included in request before posting to ensure malicious client can't skip local bio authentication
 
-> While we do accept contributions, we prioritize high quality issues and pull requests. Adhering to the below guidelines will ensure a more timely review.
-
-**Rules:**
-
-- We may not respond to your issue or PR.
-- We may close an issue or PR without much feedback.
-- We may lock discussions or contributions if our attention is getting DDOSed.
-- We're not going to provide support for build issues.
-
-**Guidelines:**
-
-- Check for existing issues before filing a new one please.
-- Open an issue and give some time for discussion before submitting a PR.
-- Stay away from PRs like...
-  - Changing "Post" to "Skeet."
-  - Refactoring the codebase, e.g., to replace MobX with Redux or something.
-  - Adding entirely new features without prior discussion. 
-
-Remember, we serve a wide community of users. Our day-to-day involves us constantly asking "which top priority is our top priority." If you submit well-written PRs that solve problems concisely, that's an awesome contribution. Otherwise, as much as we'd love to accept your ideas and contributions, we really don't have the bandwidth. That's what forking is for!
-
-## Forking guidelines
-
-You have our blessing 🪄✨ to fork this application! However, it's very important to be clear to users when you're giving them a fork.
-
-Please be sure to:
-
-- Change all branding in the repository and UI to clearly differentiate from Bluesky.
-- Change any support links (feedback, email, terms of service, etc) to your own systems.
-- Replace any analytics or error-collection systems with your own so we don't get super confused.
-
-## Security disclosures
-
-If you discover any security issues, please send an email to security@bsky.app. The email is automatically CCed to the entire team and we'll respond promptly.
-
-## Are you a developer interested in building on atproto?
-
-Bluesky is an open social network built on the AT Protocol, a flexible technology that will never lock developers out of the ecosystems that they help build. With atproto, third-party integration can be as seamless as first-party through custom feeds, federated services, clients, and more.
-
-## License (MIT)
-
-See [./LICENSE](./LICENSE) for the full license.
-
-## P.S.
-
-We ❤️ you and all of the ways you support us. Thank you for making Bluesky a great place!
+### Pulse UI
+* Additional post fields
+    * isBioAuthenticated = true if post verification succeeds
+* Additional pre-post logic
+	* Perform local auth using "expo-local-authentication" lib, if successful, get Attestation/Safetynet token and send with request
